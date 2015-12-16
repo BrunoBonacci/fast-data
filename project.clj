@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [com.taoensso/nippy "2.10.0"]
                  [com.cognitect/transit-clj "0.8.285"]
+                 [org.clojure/data.fressian "0.2.1"]
                  [criterium "0.4.3"]]
 
   :main fast-data.core

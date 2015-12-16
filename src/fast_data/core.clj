@@ -4,6 +4,7 @@
   (:require [cognitect.transit :as transit])
   (:require [criterium.core :refer :all])
   (:require [clojure.edn :as edn])
+  (:require [clojure.data.fressian :as fress])
   (:import [java.io ByteArrayInputStream ByteArrayOutputStream])
   (:gen-class))
 
@@ -27,6 +28,8 @@
     (reader (writer data))))
 
 
+(defn fressian-roundtrip [data]
+  (-> data fress/write fress/read))
 
 
 (defn headline [line]
@@ -52,12 +55,18 @@
   (= d (f d)))
 
 (comment
-  (for [data  ["hello" basic-data users-data]
-      func  [nippy-roundtrip transit-roundtrip edn-roundtrip]]
-    (try
-      (verify-roundtrip func data)
-      (catch Exception x
-        false)))
+  (->>
+   (for [[d-type data]  {:hello "hello" :basic-data basic-data :users-data users-data}
+       [f-type func]  {:fressian fressian-roundtrip
+                       :nippy    nippy-roundtrip
+                       :transit  transit-roundtrip
+                       :edn      edn-roundtrip}]
+     [f-type d-type
+      (try
+        (verify-roundtrip func data)
+        (catch Exception x
+          false))])
+   (sort-by (comp str first)))
 
 
   (verify-roundtrip edn-roundtrip basic-data )
@@ -71,13 +80,14 @@
 (defmacro run-all-bench [data]
   `(do
      (try
-       (run-bench (edn-roundtrip   ~data))
+       (run-bench (edn-roundtrip    ~data))
        (catch Exception x#))
-     (run-bench (transit-roundtrip ~data))
-     (run-bench (nippy-roundtrip   ~data))))
+     (run-bench (transit-roundtrip  ~data))
+     (run-bench (nippy-roundtrip    ~data))
+     (run-bench (fressian-roundtrip ~data))))
 
 
 (defn -main []
-  (run-all-bench (byte 1))
-  (run-all-bench basic-data)
+  ;;(run-all-bench (byte 1))
+  ;;(run-all-bench basic-data)
   (run-all-bench users-data))
